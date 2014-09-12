@@ -21,11 +21,19 @@
    (timestamp :read))
   (:default-initargs :timestamp (get-universal-time)))
 
+(define-persistent-class named-blob (blob)
+  ((name :read)))
+
+(defgeneric format-name-slot (named-blob stream))
+(defmethod format-name-slot ((object blob) stream))
+(defmethod format-name-slot ((object named-blob) stream)
+  (format stream ", NAME: ~A" (if (slot-boundp object 'name) (named-blob-name object) "<not yet known>")))
+
 (defmethod print-object ((object blob) stream)
   (print-unreadable-object (object stream :type t)
-    (format stream "ID: ~D, TYPE: ~A"
-            (store-object-id object)
-            (if (slot-boundp object 'type) (blob-type object) "<not yet known>"))))
+    (format stream "ID: ~D" (store-object-id object))
+    (format-name-slot object stream)
+    (format stream ", TYPE: ~A" (if (slot-boundp object 'type) (blob-type object) "<not yet known>"))))
 
 (defclass blob-subsystem ()
   ((n-blobs-per-directory
@@ -145,6 +153,12 @@ datastore root to ensure that the correct value is used later.")))
   (with-open-file (in pathname :direction :input :element-type '(unsigned-byte 8))
     (blob-from-stream blob in)))
 
+(defun named-blob-from-file (pathname &key (name (pathname-name pathname)) (type (pathname-type pathname)))
+  "Creates a datastore object of type BLOB that may have a name and a type"
+  (let ((blob (make-instance 'named-blob :name name :type type)))
+    (blob-from-file blob pathname)
+    blob))
+  
 (defun make-blob-from-file (pathname &optional (class 'blob) &rest initargs)
   (unless (getf initargs :type)
     (setf (getf initargs :type)

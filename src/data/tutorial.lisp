@@ -591,28 +591,24 @@
 
 ;;; The blob subsystem provides a few functions and transactions to
 ;;; work with blobs. To show how to use these functions, we will
-;;; define a blob class in our example store. A photo is simply a
-;;; binary object with a name.
+;;; create a blob in our example store. A blob can be created using
+;;; the function `NAMED-BLOB-FROM-FILE', which is a wrapper around
+;;; `MAKE-INSTANCE' and the function `BLOB-FROM-FILE'. The method
+;;; `BLOB-FROM-FILE' fills the binary data of a blob object by reading
+;;; the content of a file. This binary data is then stored in a file
+;;; named after the ID of the object in the blob root directory of the
+;;; blob subsystem.
 
-(define-persistent-class photo (blob)
-  ((name :read)))
+(named-blob-from-file (make-pathname :directory '(:absolute "tmp")
+				     :name "bla" :type "jpg")
+		      :name "foobar" :type :jpg)
 
-;;; A blob can be created using the function `MAKE-BLOB-FROM-FILE',
-;;; which is a wrapper around `MAKE-INSTANCE' and the function
-;;; `BLOB-FROM-FILE'. The method `BLOB-FROM-FILE' fills the binary
-;;; data of a blob object by reading the content of a file. This
-;;; binary data is then stored in a file named after the ID of the
-;;; object in the blob root directory of the blob subsystem.
+; => #<NAMED-BLOB ID: 11, NAME: foobar, TYPE: jpg>
 
-(make-blob-from-file "/tmp/bla.jpg" 'photo :name "foobar"
-                                           :type :jpg)
-; => #<PHOTO ID: 11, TYPE: jpg>
-
-;;; We can work with the photo object in the same way as when we work
-;;; with a normal object. However, we can access the binary data using
-;;; the methods `BLOB-PATHNAME', which returns the pathname to the
-;;; file in the blob root that holds the binary data of the
-;;; object.
+;;; We can work with the named-blob object in the same way as with a
+;;; normal object. However, we can access the binary data using the
+;;; methods `BLOB-PATHNAME', which returns the pathname to the file in
+;;; the blob root that holds the binary data of the object.
 
 (blob-pathname (store-object-with-id 11))
 ; => #P"/tmp/object-store/blob-root/11"
